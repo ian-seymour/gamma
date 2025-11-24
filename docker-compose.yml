@@ -1,0 +1,25 @@
+# Project Gamma
+#
+# File: docker-compose.yml
+# Version: 0.1
+# Date: 11/23/25
+#
+# Author: Ian Seymour / ian.seymour@cwu.edu
+#
+# Description:
+# Dockerfile to build the container with. All dependencies must be listed in
+# the requirements.txt. To connect to the application's front end, go to
+# port 5000 in any web browser while the Flask server is running. To run, see
+# commands at the bottom.
+
+# Map host port and container port to 5000:
+ports:
+  - "5000:5000"
+
+environment:
+  # SQLAlcheemy's path will point to where the SQLite database is stored
+  SQLALCHEMY_DATABASE_URI: "sqlite:////app/app.db"
+
+# Mount the current directory to /app in the container
+volumes:
+  - .:/app
