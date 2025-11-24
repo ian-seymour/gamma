@@ -19,6 +19,7 @@ ports:
 environment:
   # SQLAlcheemy's path will point to where the SQLite database is stored
   SQLALCHEMY_DATABASE_URI: "sqlite:////app/app.db"
+  NOAA_USER_AGENT: "gamma/ian.seymour@cwu.edu"
 
 # Mount the current directory to /app in the container
 volumes:
