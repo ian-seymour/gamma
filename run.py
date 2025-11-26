@@ -11,19 +11,10 @@
 # It initializes the Flask application and sets up the database.
 
 import os
-from app import create_app, db
+from app import create_app
 
 # Application factory pattern
 app = create_app()
 
-@app.cli.command("init-db")
-def init_db():
-    with app.app_context():
-        db.create_all()
-    print("Initialized the database.")
-
 if __name__ == '__main__':
-    with app.app_context():
-        # Ensure the database tables exist when running directly
-        db.create_all()
     app.run(debug=True, host='0.0.0.0', port=5000)
