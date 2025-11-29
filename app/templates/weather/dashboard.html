@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Weather Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar with favorites (can be hidden) -->
+    <div class="col-lg-3 mb-4" id="sidebar">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Favorites</h5>
+                <button class="btn btn-sm btn-light" id="toggleSidebar" type="button" style="padding: 0.25rem 0.5rem;">
+                    <span id="toggleIcon">−</span>
+                </button>
+            </div>
+            <div id="favoritesContent">
+                <div class="list-group list-group-flush">
+                    {% if favorites %}
+                        {% for favorite in favorites %}
+                        <a href="{{ url_for('weather.dashboard', favorite_id=favorite.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <span>{{ favorite.city }}</span>
+                            <form method="POST" action="{{ url_for('weather.remove_favorite', favorite_id=favorite.id) }}" style="display:inline;" onclick="return confirm('Remove this favorite?');">
+                                <button type="submit" class="btn btn-sm btn-link text-danger p-0" style="font-size: 1.5rem; line-height: 1;">×</button>
+                            </form>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="list-group-item">
+                            <p class="text-muted mb-0">No favorites yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="border-top p-3">
+                    <p class="mb-2"><small class="text-muted">{{ current_user.email }}</small></p>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-danger w-100">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location search -->
+    <div class="col-lg-9">
+        <!-- Search bar with add to favorites -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('weather.search_location') }}" class="d-flex gap-2">
+                    <input type="text" class="form-control" name="search" placeholder="Search for a city" required>
+                    <button class="btn btn-primary" type="submit">Search</button>
+                    {% if current_location and not current_location.id %}
+                    <form method="POST" action="{{ url_for('weather.add_favorite') }}" style="display:inline;">
+                        <input type="hidden" name="city" value="{{ current_location.city }}">
+                        <input type="hidden" name="latitude" value="{{ current_location.latitude }}">
+                        <input type="hidden" name="longitude" value="{{ current_location.longitude }}">
+                        <button type="submit" class="btn btn-warning">+ Add</button>
+                    </form>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        <!-- Weather display -->
+        {% if current_location and weather_data and weather_data.current %}
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">{{ current_location.city }}</h4>
+            </div>
+            <div class="card-body">
+                {% set current = weather_data.current %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Current Conditions</h5>
+                        {% if current.icon %}
+                        <div class="mb-3">
+                            <img src="{{ current.icon }}" alt="{{ current.shortForecast }}" style="width: 100px;">
+                        </div>
+                        {% endif %}
+                        <p><strong>Temperature:</strong> {{ current.temperature }}°{{ current.temperatureUnit }}</p>
+                        <p><strong>Wind:</strong> {{ current.windSpeed }} {{ current.windDirection }}</p>
+                        <p><strong>Conditions:</strong> {{ current.shortForecast }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        {% if current.detailedForecast %}
+                        <h5>Forecast</h5>
+                        <p>{{ current.detailedForecast }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="alert alert-info" role="alert">
+            <h4>Welcome to Gamma Weather App</h4>
+            <p>Search for a city to view current weather conditions.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.getElementById('toggleSidebar').addEventListener('click', function() {
+        const content = document.getElementById('favoritesContent');
+        const icon = document.getElementById('toggleIcon');
+        
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.textContent = '−';
+        } else {
+            content.style.display = 'none';
+            icon.textContent = '+';
+        }
+    });
+</script>
+{% endblock %}

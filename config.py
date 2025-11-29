@@ -19,7 +19,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # The NOAA NWS API requires a custom User-Agent header (email/app name)
-    NOAA_USER_AGENT = os.environ.get('NOAA_USER_AGENT', 'gamma/user@example.com')
+    NOAA_USER_AGENT = os.environ.get('NOAA_USER_AGENT', 'gamma/ianseymourhansel@gmail.com')
     
     # GeoIP Configuration
     GEOIP_URL = "http://ip-api.com/json/{ip}"

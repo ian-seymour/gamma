@@ -12,7 +12,7 @@
 from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from .. import db, login_manager
+from . import db, login_manager
 
 
 class User(UserMixin, db.Model):
@@ -22,7 +22,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now())
     
     # Relationship to favorites
     favorites = db.relationship('Favorite', backref='user', lazy=True, cascade='all, delete-orphan')
@@ -48,7 +48,7 @@ class Favorite(db.Model):
     city = db.Column(db.String(120), nullable=False)
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.timezone.utc)
+    created_at = db.Column(db.DateTime, default=datetime.now())
     
     def __repr__(self):
         return f'<Favorite {self.city}>'
