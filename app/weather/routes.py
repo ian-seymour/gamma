@@ -1,8 +1,8 @@
 # Project Gamma
 #
 # File: routes.py
-# Version: 0.1
-# Date: 11/25/25
+# Version: 0.2
+# Date: 11/30/25
 #
 # Author: Ian Seymour / ian.seymour@cwu.edu
 #
@@ -24,6 +24,7 @@ def dashboard():
     favorites = Favorite.query.filter_by(user_id=current_user.id).all()
     weather_data = None
     current_location = None
+    radar_data = None
     
     # If a favorite is specified in query string, load it
     favorite_id = request.args.get('favorite_id', type=int)
@@ -33,11 +34,13 @@ def dashboard():
             current_location = favorite
             weather_api = WeatherAPI()
             weather_data = weather_api.get_weather_data(favorite.latitude, favorite.longitude)
+            radar_data = weather_api.get_radar_info(favorite.latitude, favorite.longitude)
     
     return render_template('weather/dashboard.html', 
                          favorites=favorites,
                          weather_data=weather_data,
-                         current_location=current_location)
+                         current_location=current_location,
+                         radar_data=radar_data)
 
 
 @weather_bp.route('/search', methods=['POST'])
@@ -67,6 +70,8 @@ def search_location():
         flash('Unable to fetch weather data. Please try again.', 'danger')
         return redirect(url_for('weather.dashboard'))
     
+    radar_data = weather_api.get_radar_info(latitude, longitude)
+    
     favorites = Favorite.query.filter_by(user_id=current_user.id).all()
     
     # Create a temporary location object for display
@@ -80,7 +85,8 @@ def search_location():
     return render_template('weather/dashboard.html',
                          favorites=favorites,
                          weather_data=weather_data,
-                         current_location=current_location)
+                         current_location=current_location,
+                         radar_data=radar_data)
 
 
 @weather_bp.route('/api/weather/<float:latitude>/<float:longitude>')
@@ -148,10 +154,12 @@ def remove_favorite(favorite_id):
     return redirect(url_for('weather.dashboard'))
 
 
-@weather_bp.route('/radar')
+@weather_bp.route('/radar/<float:latitude>/<float:longitude>')
 @login_required
-def get_radar():
-    """Get weather radar image."""
+def get_radar(latitude, longitude):
+    """Get weather radar info for a specific location."""
     weather_api = WeatherAPI()
-    radar_url = weather_api.get_radar_image_url()
-    return jsonify({'radar_url': radar_url})
+    radar_info = weather_api.get_radar_info(latitude, longitude)
+    if not radar_info:
+        return jsonify({'error': 'Radar not found'}), 404
+    return jsonify(radar_info)

@@ -10,8 +10,10 @@
 # Database models for the Project Gamma web application.
 
 from datetime import datetime
+from flask import current_app
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from itsdangerous import URLSafeTimedSerializer as Serializer
 from . import db, login_manager
 
 
@@ -34,6 +36,21 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         """Check if the provided password matches the hashed password."""
         return check_password_hash(self.password_hash, password)
+    
+    def get_reset_token(self):
+        """Generates a secure token that expires in 30 minutes."""
+        s = Serializer(current_app.config['SECRET_KEY'])
+        return s.dumps({'user_id': self.id}, salt='password-reset-salt')
+
+    @staticmethod
+    def verify_reset_token(token, expires_sec=1800):
+        """Verifies the token and returns the user if valid."""
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            user_id = s.loads(token, salt='password-reset-salt', max_age=expires_sec)['user_id']
+        except:
+            return None
+        return User.query.get(user_id)
     
     def __repr__(self):
         return f'<User {self.email}>'

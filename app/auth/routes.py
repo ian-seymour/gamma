@@ -15,6 +15,7 @@ from . import auth_bp
 from .forms import LoginForm, RegisterForm, ResetPasswordForm, NewPasswordForm
 from ..models import User
 from .. import db
+from .email import send_reset_email
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -79,7 +80,8 @@ def reset_password():
         if user is None:
             flash('If an account exists with that email, you will receive password reset instructions.', 'info')
         else:
-            flash('Password reset link will be sent to your email. TEST VERSION: Use the reset link directly.', 'info')
+            send_reset_email(user)
+            flash('Password reset link will be sent to your email. TEST VERSION: Use the reset link output to the terminal.', 'info')
         
         return redirect(url_for('auth.login'))
     
@@ -92,6 +94,12 @@ def reset_password_confirm(token):
     if current_user.is_authenticated:
         return redirect(url_for('weather.dashboard'))
     
+    user = User.verify_reset_token(token)
+    
+    if user is None:
+        flash('That is an invalid or expired token', 'warning')
+        return redirect(url_for('auth.reset_password'))
+
     form = NewPasswordForm()
     if form.validate_on_submit():
         flash('Your password has been reset. Please log in.', 'success')

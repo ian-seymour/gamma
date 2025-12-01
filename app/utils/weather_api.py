@@ -1,13 +1,13 @@
 # Project Gamma
 #
 # File: weather_api.py
-# Version: 0.1
-# Date: 11/26/25
+# Version: 0.2
+# Date: 11/30/25
 #
 # Author: Ian Seymour / ian.seymour@cwu.edu
 #
 # Description:
-# Wrapper for NOAA/NWS API interactions and weather radar retrieval.
+# Wrapper for NOAA API requests and weather radar retrieval.
 
 import requests
 from flask import current_app
@@ -18,6 +18,12 @@ logger = logging.getLogger(__name__)
 
 # NOAA API endpoints
 NOAA_POINTS_API = "https://api.weather.gov/points/{latitude},{longitude}"
+
+# NOAA Radar Image Endpoints
+# These fetch the GIF loop or static image for a specific station
+NOAA_RADAR_STATIC = "https://radar.weather.gov/ridge/standard/{station}_0.png"
+NOAA_RADAR_LOOP = "https://radar.weather.gov/ridge/standard/{station}_loop.gif"
+NOAA_RADAR_DETAIL = "https://radar.weather.gov/station/{station}/detail"
 
 class WeatherAPI:
     """Wrapper class for NOAA/NWS API calls."""
@@ -90,6 +96,42 @@ class WeatherAPI:
             logger.error(f"Error getting weather data: {e}")
             return None
 
+    def get_radar_info(self, latitude: float, longitude: float) -> Optional[Dict]:
+            """
+            Get the nearest radar station and image URLs for a location.
+            
+            Args:
+                latitude
+                longitude
+                
+            Returns:
+                Dictionary containing station ID and radar image URLs
+            """
+            try:
+                # Reuse the points API to find the nearest radar station
+                points = self.get_points(latitude, longitude)
+                if not points or 'properties' not in points:
+                    return None
+                
+                # Extract the station ID
+                station_id = points['properties'].get('radarStation')
+                
+                if not station_id:
+                    logger.warning(f"No radar station found for coordinates: {latitude}, {longitude}")
+                    return None
+                
+                # Clean the ID just in case
+                station_id = station_id.strip()
+                
+                return {
+                    'station_id': station_id,
+                    'static_url': NOAA_RADAR_STATIC.format(station=station_id),
+                    'loop_url': NOAA_RADAR_LOOP.format(station=station_id),
+                    'external_link': NOAA_RADAR_DETAIL.format(station=station_id)
+                }
+            except Exception as e:
+                logger.error(f"Error getting radar info: {e}")
+                return None
 
 def geocode_location(location: str) -> Optional[Tuple[float, float, str]]:
     """
