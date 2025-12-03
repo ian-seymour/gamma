@@ -1,8 +1,8 @@
 # Project Gamma
 #
 # File: routes.py
-# Version: 0.2
-# Date: 11/30/25
+# Version: 0.3
+# Date: 12/2/25
 #
 # Author: Ian Seymour / ian.seymour@cwu.edu
 #
@@ -25,6 +25,7 @@ def dashboard():
     weather_data = None
     current_location = None
     radar_data = None
+    aqi_data = None
     
     # If a favorite is specified in query string, load it
     favorite_id = request.args.get('favorite_id', type=int)
@@ -35,12 +36,14 @@ def dashboard():
             weather_api = WeatherAPI()
             weather_data = weather_api.get_weather_data(favorite.latitude, favorite.longitude)
             radar_data = weather_api.get_radar_info(favorite.latitude, favorite.longitude)
+            aqi_data = weather_api.get_air_quality(favorite.latitude, favorite.longitude)
     
     return render_template('weather/dashboard.html', 
                          favorites=favorites,
                          weather_data=weather_data,
                          current_location=current_location,
-                         radar_data=radar_data)
+                         radar_data=radar_data,
+                         aqi_data=aqi_data)
 
 
 @weather_bp.route('/search', methods=['POST'])
@@ -61,11 +64,10 @@ def search_location():
     
     latitude, longitude, city_name = geocoded
     
-    # Get weather data (current-conditions only)
+    # Get weather data
     weather_api = WeatherAPI()
     weather_data = weather_api.get_weather_data(latitude, longitude)
 
-    # Require the 'current' key produced by WeatherAPI.get_weather_data()
     if not weather_data or not weather_data.get('current'):
         flash('Unable to fetch weather data. Please try again.', 'danger')
         return redirect(url_for('weather.dashboard'))

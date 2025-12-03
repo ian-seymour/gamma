@@ -117,6 +117,16 @@
                             {% if current.relativeHumidity %}
                             <li class="mb-2"><strong>Humidity:</strong> {{ current.relativeHumidity.value }}%</li>
                             {% endif %}
+
+                            <!-- AQI Section -->
+                            {% if aqi_data %}
+                                <li class="mt-3">
+                                    <strong>Air Quality:</strong> {{ aqi_data['AQI'] }}
+                                    <br>
+                                    <small class="text-muted">Primary Pollutant: {{ aqi_data['ParameterName'] }}</small>
+                                </li>
+                            {% endif %}
+
                             <li class="mt-3"><em>{{ current.detailedForecast }}</em></li>
                         </ul>
                     </div>

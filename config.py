@@ -1,8 +1,8 @@
 # Project Gamma
 #
 # File: config.py
-# Version: 0.1
-# Date: 11/23/25
+# Version: 0.2
+# Date: 12/2/25
 #
 # Author: Ian Seymour / ian.seymour@cwu.edu
 #
@@ -20,6 +20,9 @@ class Config:
     
     # The NOAA NWS API requires a custom User-Agent header (email/app name)
     NOAA_USER_AGENT = os.environ.get('NOAA_USER_AGENT', 'gamma/ianseymourhansel@gmail.com')
+
+    # AirNow API Key
+    AIRNOW_API_KEY = os.environ.get('AIRNOW_API_KEY')
     
     # GeoIP Configuration
     GEOIP_URL = "http://ip-api.com/json/{ip}"

@@ -1,8 +1,8 @@
 # Project Gamma
 #
 # File: weather_api.py
-# Version: 0.2
-# Date: 11/30/25
+# Version: 0.3
+# Date: 12/2/2025
 #
 # Author: Ian Seymour / ian.seymour@cwu.edu
 #
@@ -24,6 +24,9 @@ NOAA_POINTS_API = "https://api.weather.gov/points/{latitude},{longitude}"
 NOAA_RADAR_STATIC = "https://radar.weather.gov/ridge/standard/{station}_0.png"
 NOAA_RADAR_LOOP = "https://radar.weather.gov/ridge/standard/{station}_loop.gif"
 NOAA_RADAR_DETAIL = "https://radar.weather.gov/station/{station}/detail"
+
+# AirNow API Endpoint
+AIRNOW_API_ENDPOINT = "https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude={latitude}&longitude={longitude}&distance=50&API_KEY={api_key}"
 
 class WeatherAPI:
     """Wrapper class for NOAA/NWS API calls."""
@@ -55,40 +58,51 @@ class WeatherAPI:
     
     def get_weather_data(self, latitude: float, longitude: float) -> Optional[Dict]:
         """
-        Get current weather conditions for a location.
+        Get current weather conditions using a hybrid of hourly and standard forecasts.
         
         Args:
             latitude
             longitude
-            
+        
         Returns:
-            Dictionary containing current weather conditions
+            Dictionary containing current weather data or none if request fails
         """
         try:
-            # use points API to get the forecast URL, then fetch it
             points = self.get_points(latitude, longitude)
             if not points or 'properties' not in points:
                 return None
 
-            forecast_url = points['properties'].get('forecast')
-            if not forecast_url:
+            forecast_hourly_url = points['properties'].get('forecastHourly')
+            forecast_standard_url = points['properties'].get('forecast')
+
+            if not forecast_hourly_url or not forecast_standard_url:
                 return None
 
-            resp = requests.get(forecast_url, headers=self.headers, timeout=10)
-            resp.raise_for_status()
-            forecast = resp.json()
-
-            if not forecast or 'properties' not in forecast:
+            # First period of the hourly forecast is used for current conditions
+            resp_hourly = requests.get(forecast_hourly_url, headers=self.headers, timeout=10)
+            resp_hourly.raise_for_status()
+            hourly_data = resp_hourly.json()
+            
+            if not hourly_data.get('properties', {}).get('periods'):
                 return None
+            
+            # Temp, Wind, Icon, Shortforecast
+            current_conditions = hourly_data['properties']['periods'][0]
 
-            periods = forecast['properties'].get('periods', [])
-            if not periods:
-                return None
-
-            current = periods[0]
+            # Written summary from standard forecast
+            resp_standard = requests.get(forecast_standard_url, headers=self.headers, timeout=10)
+            resp_standard.raise_for_status()
+            standard_data = resp_standard.json()
+            
+            # Merge the data
+            if standard_data.get('properties', {}).get('periods'):
+                todays_forecast = standard_data['properties']['periods'][0]
+                current_conditions['detailedForecast'] = todays_forecast.get('detailedForecast', 'Forecast unavailable.')
+            else:
+                current_conditions['detailedForecast'] = "Detailed forecast unavailable."
 
             return {
-                'current': current,
+                'current': current_conditions,
                 'latitude': latitude,
                 'longitude': longitude
             }
@@ -97,41 +111,80 @@ class WeatherAPI:
             return None
 
     def get_radar_info(self, latitude: float, longitude: float) -> Optional[Dict]:
-            """
-            Get the nearest radar station and image URLs for a location.
+        """
+        Get the nearest radar station and image URLs for a location.
             
-            Args:
-                latitude
-                longitude
+        Args:
+            latitude
+            longitude
                 
-            Returns:
-                Dictionary containing station ID and radar image URLs
-            """
-            try:
-                # Reuse the points API to find the nearest radar station
-                points = self.get_points(latitude, longitude)
-                if not points or 'properties' not in points:
-                    return None
-                
-                # Extract the station ID
-                station_id = points['properties'].get('radarStation')
-                
-                if not station_id:
-                    logger.warning(f"No radar station found for coordinates: {latitude}, {longitude}")
-                    return None
-                
-                # Clean the ID just in case
-                station_id = station_id.strip()
-                
-                return {
-                    'station_id': station_id,
-                    'static_url': NOAA_RADAR_STATIC.format(station=station_id),
-                    'loop_url': NOAA_RADAR_LOOP.format(station=station_id),
-                    'external_link': NOAA_RADAR_DETAIL.format(station=station_id)
-                }
-            except Exception as e:
-                logger.error(f"Error getting radar info: {e}")
+        Returns:
+             Dictionary containing station ID and radar image URLs
+        """
+        try:
+            # Reuse the points API to find the nearest radar station
+            points = self.get_points(latitude, longitude)
+            if not points or 'properties' not in points:
                 return None
+                
+            # Extract the station ID
+            station_id = points['properties'].get('radarStation')
+                
+            if not station_id:
+                logger.warning(f"No radar station found for coordinates: {latitude}, {longitude}")
+                return None
+                
+            # Clean the ID just in case
+            station_id = station_id.strip()
+                
+            return {
+                'station_id': station_id,
+                'static_url': NOAA_RADAR_STATIC.format(station=station_id),
+                'loop_url': NOAA_RADAR_LOOP.format(station=station_id),
+                'external_link': NOAA_RADAR_DETAIL.format(station=station_id)
+            }
+        except Exception as e:
+            logger.error(f"Error getting radar info: {e}")
+            return None
+            
+    def get_air_quality(self, latitude: float, longitude: float) -> Optional[Dict]:
+        """
+        Get current air quality data from AirNow.
+
+        Args:
+            latitude
+            longitude
+
+        Returns:
+            The pollutant with the highest AQI.
+        """
+        api_key = current_app.config.get('AIRNOW_API_KEY')
+        if not api_key:
+            logger.warning("AirNow API key not found in config.")
+            return None
+        
+        try:
+            url = AIRNOW_API_ENDPOINT.format(
+                latitude=latitude, 
+                longitude=longitude, 
+                api_key=api_key
+            )
+            
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            
+            # AirNow returns a list of pollutants, this will display the worst one
+            if not data:
+                return None
+                
+            # Find the primary pollutant with highest AQI
+            primary = max(data, key=lambda x: x['AQI'])
+            return primary
+            
+        except Exception as e:
+            logger.error(f"Error getting air quality data: {e}")
+            return None
 
 def geocode_location(location: str) -> Optional[Tuple[float, float, str]]:
     """
