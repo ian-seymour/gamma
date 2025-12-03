@@ -15,6 +15,6 @@ the issue is your UV install or you're not in its environment.
 
 To do:
 - Make UI actually look like intended design, right now it's barebones bootstrap with pure defaults.
-- Get AirNow for air quality data setup.
 - Integrate password security requirements.
-- Using NOAA's api, it seems we cannot query locations outside the US. We may want to address this, but it might mean a second api...
+- User location
+- Refresh button for forecast
