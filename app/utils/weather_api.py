@@ -1,8 +1,8 @@
 # Project Gamma
 #
 # File: weather_api.py
-# Version: 0.3
-# Date: 12/2/2025
+# Version: 0.4
+# Date: 12/3/2025
 #
 # Author: Ian Seymour / ian.seymour@cwu.edu
 #
@@ -58,7 +58,7 @@ class WeatherAPI:
     
     def get_weather_data(self, latitude: float, longitude: float) -> Optional[Dict]:
         """
-        Get current weather conditions using a hybrid of hourly and standard forecasts.
+        Get current weather conditions.
         
         Args:
             latitude
@@ -72,13 +72,19 @@ class WeatherAPI:
             if not points or 'properties' not in points:
                 return None
 
+            # NOAA returns elevation in meters
+            elevation_m = points['properties'].get('elevation', {}).get('value')
+            elevation_ft = None
+            if elevation_m is not None:
+                elevation_ft = round(elevation_m * 3.28084) # Convert to feet
+
             forecast_hourly_url = points['properties'].get('forecastHourly')
             forecast_standard_url = points['properties'].get('forecast')
 
             if not forecast_hourly_url or not forecast_standard_url:
                 return None
 
-            # First period of the hourly forecast is used for current conditions
+            # Fetch Hourly Data
             resp_hourly = requests.get(forecast_hourly_url, headers=self.headers, timeout=10)
             resp_hourly.raise_for_status()
             hourly_data = resp_hourly.json()
@@ -86,25 +92,56 @@ class WeatherAPI:
             if not hourly_data.get('properties', {}).get('periods'):
                 return None
             
-            # Temp, Wind, Icon, Shortforecast
+            # Base current object
             current_conditions = hourly_data['properties']['periods'][0]
 
-            # Written summary from standard forecast
+            # Fetch standard forecast
             resp_standard = requests.get(forecast_standard_url, headers=self.headers, timeout=10)
             resp_standard.raise_for_status()
             standard_data = resp_standard.json()
             
-            # Merge the data
+            high_temp = None
+            low_temp = None
+            
             if standard_data.get('properties', {}).get('periods'):
-                todays_forecast = standard_data['properties']['periods'][0]
+                periods = standard_data['properties']['periods']
+                todays_forecast = periods[0]
+                
+                # Add the narrative text
                 current_conditions['detailedForecast'] = todays_forecast.get('detailedForecast', 'Forecast unavailable.')
+                
+                # Determine high and low temps based on day or night
+                if todays_forecast.get('isDaytime'):
+                    # If day: period 0 is today (High), period 1 is tonight (Low)
+                    high_temp = todays_forecast.get('temperature')
+                    if len(periods) > 1:
+                        low_temp = periods[1].get('temperature')
+                else:
+                    # If night: period 0 is Tonight (Low), period 1 is tomorrow (High)
+                    low_temp = todays_forecast.get('temperature')
+                    if len(periods) > 1:
+                        high_temp = periods[1].get('temperature')
             else:
                 current_conditions['detailedForecast'] = "Detailed forecast unavailable."
+
+            # get dewpoint and precip probability if available
+            dewpoint = current_conditions.get('dewpoint', {}).get('value')
+            precip_prob = current_conditions.get('probabilityOfPrecipitation', {}).get('value')
+            
+            # Convert Dewpoint to F
+            dewpoint_f = None
+            if dewpoint is not None:
+                dewpoint_f = round((dewpoint * 9/5) + 32)
 
             return {
                 'current': current_conditions,
                 'latitude': latitude,
-                'longitude': longitude
+                'longitude': longitude,
+                'elevation': elevation_ft,
+                'high_temp': high_temp,
+                'low_temp': low_temp,
+                'dewpoint': dewpoint_f,
+                'precip_prob': precip_prob
             }
         except Exception as e:
             logger.error(f"Error getting weather data: {e}")

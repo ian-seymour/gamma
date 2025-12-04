@@ -13,6 +13,36 @@ from flask_wtf import FlaskForm
 from wtforms import PasswordField, SubmitField, EmailField
 from wtforms.validators import DataRequired, Email, EqualTo, ValidationError, Length
 from ..models import User
+import re
+
+class ComplexityValidator:
+    """
+    Custom validator to enforce password complexity requirements:
+    - Must contain 3 out of 4 character types: lowercase, uppercase, number, special character.
+    """
+    def __init__(self, message=None):
+        if not message:
+            message = 'Password must contain at least 3 of the following: lowercase, uppercase, number, or special character.'
+        self.message = message
+
+    def __call__(self, form, field):
+        password = field.data
+        if not password:
+            # DataRequired handles empty password
+            return
+
+        # Check for presence of character types using regex
+        has_lower = bool(re.search(r'[a-z]', password))
+        has_upper = bool(re.search(r'[A-Z]', password))
+        has_digit = bool(re.search(r'\d', password))
+        # Checks for anything that is not a letter or number
+        has_special = bool(re.search(r'[^\w\s]', password)) 
+
+        # Count how many types are present
+        complexity_score = sum([has_lower, has_upper, has_digit, has_special])
+
+        if complexity_score < 3:
+            raise ValidationError(self.message)
 
 
 class LoginForm(FlaskForm):
@@ -35,7 +65,8 @@ class RegisterForm(FlaskForm):
     ])
     password = PasswordField('Password', validators=[
         DataRequired(message='Password is required'),
-        Length(min=6, message='Password must be at least 6 characters long')
+        Length(min=6, max=20, message='Password must be between 6 and 20 characters long'),
+        ComplexityValidator() # this checks password for requirements
     ])
     confirm_password = PasswordField('Confirm Password', validators=[
         DataRequired(message='Please confirm your password'),
@@ -62,7 +93,8 @@ class NewPasswordForm(FlaskForm):
     """Form for setting a new password."""
     password = PasswordField('New Password', validators=[
         DataRequired(message='Password is required'),
-        Length(min=6, message='Password must be at least 6 characters long')
+        Length(min=6, max=20, message='Password must be between 6 and 20 characters long'),
+        ComplexityValidator() # this checks password afor requirements
     ])
     confirm_password = PasswordField('Confirm Password', validators=[
         DataRequired(message='Please confirm your password'),
