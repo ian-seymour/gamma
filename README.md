@@ -12,9 +12,3 @@ Once UV is figured out, go to the root of Gamma folder and type: flask run --deb
 
 It will start a server with and list an http:// with an ip adress and a port, copy paste that in browser to view app. If you get module not found errors,
 the issue is your UV install or you're not in its environment.
-
-To do:
-- Make UI actually look like intended design, right now it's barebones bootstrap with pure defaults.
-- Integrate password security requirements.
-- User location
-- Refresh button for forecast
