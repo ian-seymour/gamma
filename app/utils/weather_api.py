@@ -23,7 +23,6 @@ NOAA_POINTS_API = "https://api.weather.gov/points/{latitude},{longitude}"
 # These fetch the GIF loop or static image for a specific station
 NOAA_RADAR_STATIC = "https://radar.weather.gov/ridge/standard/{station}_0.png"
 NOAA_RADAR_LOOP = "https://radar.weather.gov/ridge/standard/{station}_loop.gif"
-NOAA_RADAR_DETAIL = "https://radar.weather.gov/station/{station}/detail"
 
 # AirNow API Endpoint
 AIRNOW_API_ENDPOINT = "https://www.airnowapi.org/aq/observation/latLong/current/?format=application/json&latitude={latitude}&longitude={longitude}&distance=50&API_KEY={api_key}"
@@ -38,7 +37,7 @@ class WeatherAPI:
     
     def get_points(self, latitude: float, longitude: float) -> Optional[Dict]:
         """
-        Get grid point data from NOAA.
+        get grid point data from NOAA.
         
         Args:
             latitude
@@ -58,7 +57,7 @@ class WeatherAPI:
     
     def get_weather_data(self, latitude: float, longitude: float) -> Optional[Dict]:
         """
-        Get current weather conditions.
+        get current weather conditions.
         
         Args:
             latitude
@@ -149,7 +148,7 @@ class WeatherAPI:
 
     def get_radar_info(self, latitude: float, longitude: float) -> Optional[Dict]:
         """
-        Get the nearest radar station and image URLs for a location.
+        get the nearest radar station and image URLs for a location.
             
         Args:
             latitude
@@ -178,7 +177,6 @@ class WeatherAPI:
                 'station_id': station_id,
                 'static_url': NOAA_RADAR_STATIC.format(station=station_id),
                 'loop_url': NOAA_RADAR_LOOP.format(station=station_id),
-                'external_link': NOAA_RADAR_DETAIL.format(station=station_id)
             }
         except Exception as e:
             logger.error(f"Error getting radar info: {e}")
@@ -186,7 +184,7 @@ class WeatherAPI:
             
     def get_air_quality(self, latitude: float, longitude: float) -> Optional[Dict]:
         """
-        Get current air quality data from AirNow.
+        get current air quality data from AirNow.
 
         Args:
             latitude

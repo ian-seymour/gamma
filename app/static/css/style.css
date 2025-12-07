@@ -1,0 +1,118 @@
+:root {
+    --teal-dark: #5A8F8C;   /* Main background */
+    --teal-light: #9FE7E9;  /* Headers */
+    --grey: #D9D9D9;        /* Content areas */
+    --border: 3px solid #000000;
+}
+
+body {
+    background-color: var(--teal-dark);
+    font-family: 'Courier New', Courier, monospace;
+    color: black;
+}
+
+/* Layout Containers */
+.card {
+    background-color: var(--grey);
+    border: var(--border);
+    border-radius: 0 !important;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.3) !important;
+    margin-bottom: 20px;
+}
+
+/* The header bars */
+.card-header {
+    background-color: var(--teal-light) !important;
+    border-bottom: var(--border);
+    border-radius: 0 !important;
+    color: black !important;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Sidebar */
+.list-group-item {
+    background-color: var(--grey);
+    border: none;
+    border-bottom: 1px solid black;
+    color: black;
+    border-radius: 0 !important;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+/* Nav Bar */
+.navbar {
+    background-color: var(--gamma-teal-light) !important;
+    border-bottom: var(--gamma-border);
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+    margin-bottom: 25px;
+}
+
+.navbar-brand {
+    color: black !important;
+    font-weight: 900;
+    font-family: 'Courier New', Courier, monospace;
+    text-transform: uppercase;
+}
+
+/* --- Elements --- */
+/* Buttons */
+.btn {
+    border-radius: 0 !important;
+    border: 2px solid black;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.btn-primary {
+    background-color: #333;
+    border-color: black;
+}
+
+.btn-primary:hover {
+    background-color: #555;
+    border-color: black;
+}
+
+/* Inputs */
+.form-control {
+    border-radius: 0 !important;
+    border: 2px solid black;
+    background-color: #eee;
+}
+
+.form-control:focus {
+    background-color: #fff;
+    box-shadow: none;
+    border-color: black;
+}
+
+/* Overriding Bootstrap text colors to ensure visibility on new backgrounds */
+.text-white {
+    color: black !important;
+}
+
+.text-white-50 {
+    color: #444 !important;
+}
+
+.text-muted {
+    color: #444 !important;
+}
+
+.bg-light {
+    background-color: transparent !important; /* Remove internal card backgrounds */
+    border: 1px solid black !important; /* Add internal borders */
+}
+
+/* Alerts */
+.alert {
+    border-radius: 0;
+    border: 2px solid black;
+    background-color: var(--gamma-teal-light);
+    color: black;
+}

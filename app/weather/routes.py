@@ -26,24 +26,42 @@ def dashboard():
     current_location = None
     radar_data = None
     aqi_data = None
+    lat = None
+    lon = None
     
-    # If a favorite is specified in query string, load it
+    # Check if a favorite is specified in query string
     favorite_id = request.args.get('favorite_id', type=int)
     if favorite_id:
         favorite = Favorite.query.get(favorite_id)
         if favorite and favorite.user_id == current_user.id:
             current_location = favorite
-            weather_api = WeatherAPI()
-            weather_data = weather_api.get_weather_data(favorite.latitude, favorite.longitude)
-            radar_data = weather_api.get_radar_info(favorite.latitude, favorite.longitude)
-            aqi_data = weather_api.get_air_quality(favorite.latitude, favorite.longitude)
+            lat = favorite.latitude
+            lon = favorite.longitude
+            
+    # If no location selected yet, default to Ellensburg
+    if not current_location:
+        lat = 46.9965
+        lon = -120.5478
+        current_location = {
+            'city': 'Ellensburg',
+            'latitude': lat,
+            'longitude': lon,
+            'id': None # None means it's not a database object
+        }
+
+    # Fetch data using the determined coordinates
+    if lat and lon:
+        weather_api = WeatherAPI()
+        weather_data = weather_api.get_weather_data(lat, lon)
+        radar_data = weather_api.get_radar_info(lat, lon)
+        aqi_data = weather_api.get_air_quality(lat, lon)
     
     return render_template('weather/dashboard.html', 
-                         favorites=favorites,
-                         weather_data=weather_data,
-                         current_location=current_location,
-                         radar_data=radar_data,
-                         aqi_data=aqi_data)
+                          favorites=favorites,
+                          weather_data=weather_data,
+                          current_location=current_location,
+                          radar_data=radar_data,
+                          aqi_data=aqi_data)
 
 
 @weather_bp.route('/search', methods=['POST'])
